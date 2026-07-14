@@ -21,11 +21,9 @@ export default function LoginPage() {
     const { setAuth } = useAuthStore()
     const [showPass, setShowPass] = useState(false)
 
-    const {
-        register,
-        handleSubmit,
-        formState: { errors, isSubmitting },
-    } = useForm({ resolver: zodResolver(schema) })
+    const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm({
+        resolver: zodResolver(schema),
+    })
 
     const onSubmit = async (data) => {
         try {
@@ -33,29 +31,29 @@ export default function LoginPage() {
             setAuth(res.data.user, res.data.accessToken)
             navigate('/dashboard')
         } catch (err) {
-            const msg = err.response?.data?.error?.message || 'Login failed'
-            toast.error(msg)
+            toast.error(err.response?.data?.error?.message || 'Login failed')
         }
     }
 
     return (
         <div className="min-h-screen bg-surface-0 flex items-center justify-center p-4">
-            <div className="w-full max-w-sm animate-fade-in">
+            <div className="w-full max-w-md animate-fade-in">
+
                 {/* Logo */}
-                <div className="flex items-center gap-2.5 mb-8 justify-center">
-                    <div className="w-8 h-8 rounded-lg bg-orange-500 flex items-center justify-center shadow-lg shadow-orange-500/30">
-                        <Radar size={18} className="text-white" />
+                <div className="flex items-center gap-3 mb-10 justify-center">
+                    <div className="w-10 h-10 rounded-xl bg-orange-500 flex items-center justify-center shadow-lg shadow-orange-500/30">
+                        <Radar size={22} className="text-white" />
                     </div>
-                    <span className="text-lg font-bold text-text-primary tracking-tight">LeadScout</span>
+                    <span className="text-2xl font-bold text-text-primary tracking-tight">LeadScout</span>
                 </div>
 
-                <div className="rounded-xl border border-border-default bg-surface-2 p-6 shadow-xl">
-                    <h1 className="text-base font-semibold mb-0.5">Welcome back</h1>
-                    <p className="text-xs text-text-muted mb-5">Sign in to your account</p>
+                <div className="rounded-2xl border border-border-default bg-surface-2 p-8 shadow-2xl">
+                    <h1 className="text-xl font-bold mb-1">Welcome back</h1>
+                    <p className="text-sm text-text-muted mb-6">Sign in to your account to continue</p>
 
-                    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+                    <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
                         <div>
-                            <Label htmlFor="email">Email</Label>
+                            <Label htmlFor="email">Email address</Label>
                             <Input
                                 id="email"
                                 type="email"
@@ -63,7 +61,7 @@ export default function LoginPage() {
                                 autoComplete="email"
                                 {...register('email')}
                             />
-                            {errors.email && <p className="mt-1 text-xs text-red-400">{errors.email.message}</p>}
+                            {errors.email && <p className="mt-1.5 text-sm text-red-400">{errors.email.message}</p>}
                         </div>
 
                         <div>
@@ -72,31 +70,31 @@ export default function LoginPage() {
                                 <Input
                                     id="password"
                                     type={showPass ? 'text' : 'password'}
-                                    placeholder="••••••••"
+                                    placeholder="Your password"
                                     autoComplete="current-password"
-                                    className="pr-9"
+                                    className="pr-11"
                                     {...register('password')}
                                 />
                                 <button
                                     type="button"
                                     onClick={() => setShowPass(!showPass)}
-                                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-secondary transition-colors"
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-secondary transition-colors"
                                 >
-                                    {showPass ? <EyeOff size={13} /> : <Eye size={13} />}
+                                    {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
                                 </button>
                             </div>
-                            {errors.password && <p className="mt-1 text-xs text-red-400">{errors.password.message}</p>}
+                            {errors.password && <p className="mt-1.5 text-sm text-red-400">{errors.password.message}</p>}
                         </div>
 
-                        <Button type="submit" className="w-full" loading={isSubmitting}>
+                        <Button type="submit" size="lg" className="w-full" loading={isSubmitting}>
                             Sign in
                         </Button>
                     </form>
 
-                    <p className="mt-4 text-center text-xs text-text-muted">
+                    <p className="mt-6 text-center text-sm text-text-muted">
                         Don't have an account?{' '}
-                        <Link to="/signup" className="text-orange-400 hover:text-orange-300 transition-colors">
-                            Create one
+                        <Link to="/signup" className="text-orange-400 hover:text-orange-300 font-medium transition-colors">
+                            Create one free
                         </Link>
                     </p>
                 </div>

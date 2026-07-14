@@ -6,7 +6,7 @@ export function Card({ className, children, ...props }) {
         <div
             data-slot="card"
             className={cn(
-                'rounded-lg border border-border-subtle bg-surface-2 shadow-sm',
+                'rounded-xl border border-border-subtle bg-surface-2 shadow-sm',
                 className
             )}
             {...props}
@@ -18,7 +18,7 @@ export function Card({ className, children, ...props }) {
 
 export function CardHeader({ className, children, ...props }) {
     return (
-        <div className={cn('p-4 pb-3', className)} {...props}>
+        <div className={cn('p-5 pb-3', className)} {...props}>
             {children}
         </div>
     )
@@ -34,7 +34,7 @@ export function CardTitle({ className, children, ...props }) {
 
 export function CardContent({ className, children, ...props }) {
     return (
-        <div className={cn('p-4 pt-0', className)} {...props}>
+        <div className={cn('p-5 pt-0', className)} {...props}>
             {children}
         </div>
     )

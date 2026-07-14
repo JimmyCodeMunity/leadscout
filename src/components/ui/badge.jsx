@@ -9,6 +9,7 @@ const variants = {
     red: 'bg-red-500/15 text-red-400 border-red-500/25',
     yellow: 'bg-yellow-500/15 text-yellow-400 border-yellow-500/25',
     purple: 'bg-purple-500/15 text-purple-400 border-purple-500/25',
+    green: 'bg-green-500/15 text-green-400 border-green-500/25',
 }
 
 export function Badge({ className, variant = 'default', children, ...props }) {
@@ -16,7 +17,7 @@ export function Badge({ className, variant = 'default', children, ...props }) {
         <span
             data-slot="badge"
             className={cn(
-                'inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium leading-none',
+                'inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-semibold leading-none',
                 variants[variant],
                 className
             )}

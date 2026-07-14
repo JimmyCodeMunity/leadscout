@@ -7,7 +7,7 @@ export function Label({ className, ...props }) {
         <LabelPrimitive.Root
             data-slot="label"
             className={cn(
-                'block text-xs font-medium text-text-secondary mb-1 select-none',
+                'block text-sm font-medium text-text-secondary mb-1.5 select-none',
                 className
             )}
             {...props}

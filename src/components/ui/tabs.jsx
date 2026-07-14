@@ -8,7 +8,7 @@ export function TabsList({ className, children, ...props }) {
     return (
         <TabsPrimitive.List
             className={cn(
-                'inline-flex h-8 items-center gap-0.5 rounded-lg bg-surface-3 p-0.5 border border-border-subtle',
+                'inline-flex h-10 items-center gap-1 rounded-xl bg-surface-3 p-1 border border-border-subtle',
                 className
             )}
             {...props}
@@ -22,7 +22,7 @@ export function TabsTrigger({ className, children, ...props }) {
     return (
         <TabsPrimitive.Trigger
             className={cn(
-                'inline-flex items-center gap-1.5 whitespace-nowrap rounded-md px-3 py-1 text-xs font-medium',
+                'inline-flex items-center gap-2 whitespace-nowrap rounded-lg px-4 py-1.5 text-sm font-medium',
                 'text-text-muted transition-all duration-150 cursor-pointer select-none',
                 'data-[state=active]:bg-surface-5 data-[state=active]:text-text-primary data-[state=active]:shadow-sm',
                 'hover:text-text-secondary',
@@ -39,7 +39,7 @@ export function TabsTrigger({ className, children, ...props }) {
 export function TabsContent({ className, children, ...props }) {
     return (
         <TabsPrimitive.Content
-            className={cn('mt-3 animate-fade-in', className)}
+            className={cn('mt-4 animate-fade-in', className)}
             {...props}
         >
             {children}

@@ -15,6 +15,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import {
     CheckCircle2, Key, User, Search,
     Trash2, Play, PauseCircle, Globe, Zap,
+    ExternalLink,
 } from 'lucide-react'
 import { formatDate, getInitials } from '@/lib/utils'
 import { cn } from '@/lib/utils'
@@ -27,7 +28,10 @@ const profileSchema = z.object({
 const passwordSchema = z.object({
     password: z.string().min(8, 'Password must be at least 8 characters'),
     confirm: z.string(),
-}).refine((d) => d.password === d.confirm, { message: "Passwords don't match", path: ['confirm'] })
+}).refine((d) => d.password === d.confirm, {
+    message: "Passwords don't match",
+    path: ['confirm'],
+})
 
 const API_PROVIDERS = [
     {
@@ -37,7 +41,7 @@ const API_PROVIDERS = [
         color: 'text-blue-400',
         bg: 'bg-blue-500/10',
         docs: 'https://developers.google.com/maps/documentation/places/web-service',
-        note: 'Textsearch + Place Details endpoints. Billing required.',
+        note: 'Textsearch + Place Details. Billing required after free quota.',
     },
     {
         id: 'yelp',
@@ -55,7 +59,7 @@ const API_PROVIDERS = [
         color: 'text-green-400',
         bg: 'bg-green-500/10',
         docs: 'https://overpass-api.de/',
-        note: 'Free — no API key needed.',
+        note: 'Completely free — no API key required.',
     },
 ]
 
@@ -63,7 +67,6 @@ export default function SettingsPage() {
     const { user, updateUser } = useAuthStore()
     const qc = useQueryClient()
 
-    // Profile form
     const {
         register: regProfile,
         handleSubmit: submitProfile,
@@ -73,7 +76,6 @@ export default function SettingsPage() {
         defaultValues: { name: user?.name || '' },
     })
 
-    // Password form
     const {
         register: regPass,
         handleSubmit: submitPass,
@@ -119,191 +121,197 @@ export default function SettingsPage() {
     return (
         <div className="p-6 space-y-6 animate-fade-in">
             <div>
-                <h1 className="text-xl font-semibold">Settings</h1>
-                <p className="text-xs text-text-muted mt-0.5">Manage your account, API keys, and saved searches.</p>
+                <h1 className="text-2xl font-bold">Settings</h1>
+                <p className="text-sm text-text-muted mt-1">Manage your account, API keys, and saved searches.</p>
             </div>
 
-            {/* Account */}
+            {/* ── Account ── */}
             <Card>
                 <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                        <User size={14} className="text-orange-400" />
+                    <CardTitle className="flex items-center gap-2 text-base">
+                        <User size={16} className="text-orange-400" />
                         Account
                     </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-5">
-                    {/* Avatar + info */}
+                <CardContent className="space-y-6">
+                    {/* User info */}
                     <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-full bg-orange-500/20 border-2 border-orange-500/30 flex items-center justify-center shrink-0">
-                            <span className="text-base font-bold text-orange-400">{getInitials(user?.name || 'U')}</span>
+                        <div className="w-14 h-14 rounded-full bg-orange-500/20 border-2 border-orange-500/30 flex items-center justify-center shrink-0">
+                            <span className="text-lg font-bold text-orange-400">{getInitials(user?.name || 'U')}</span>
                         </div>
                         <div>
-                            <p className="text-sm font-semibold text-text-primary">{user?.name}</p>
-                            <p className="text-xs text-text-muted">{user?.email}</p>
-                            <p className="text-[10px] text-text-disabled mt-0.5">Member since {formatDate(user?.createdAt)}</p>
+                            <p className="text-base font-semibold text-text-primary">{user?.name}</p>
+                            <p className="text-sm text-text-muted">{user?.email}</p>
+                            <p className="text-xs text-text-disabled mt-0.5">Member since {formatDate(user?.createdAt)}</p>
                         </div>
                     </div>
 
                     <Separator />
 
-                    <form onSubmit={submitProfile(handleProfileSave)} className="space-y-3 max-w-md">
+                    {/* Profile form */}
+                    <form onSubmit={submitProfile(handleProfileSave)} className="space-y-4 max-w-md">
+                        <p className="text-sm font-semibold text-text-secondary">Update Profile</p>
                         <div>
                             <Label>Display Name</Label>
                             <Input {...regProfile('name')} />
-                            {profileErrors.name && <p className="mt-1 text-xs text-red-400">{profileErrors.name.message}</p>}
+                            {profileErrors.name && <p className="mt-1 text-sm text-red-400">{profileErrors.name.message}</p>}
                         </div>
-                        <Button type="submit" size="sm" loading={savingProfile}>Save changes</Button>
+                        <Button type="submit" loading={savingProfile}>Save changes</Button>
                     </form>
 
                     <Separator />
 
-                    <form onSubmit={submitPass(handlePasswordSave)} className="space-y-3 max-w-md">
-                        <p className="text-xs font-medium text-text-secondary">Change Password</p>
+                    {/* Password form */}
+                    <form onSubmit={submitPass(handlePasswordSave)} className="space-y-4 max-w-md">
+                        <p className="text-sm font-semibold text-text-secondary">Change Password</p>
                         <div>
                             <Label>New Password</Label>
                             <Input type="password" placeholder="Min. 8 characters" {...regPass('password')} />
-                            {passErrors.password && <p className="mt-1 text-xs text-red-400">{passErrors.password.message}</p>}
+                            {passErrors.password && <p className="mt-1 text-sm text-red-400">{passErrors.password.message}</p>}
                         </div>
                         <div>
                             <Label>Confirm Password</Label>
-                            <Input type="password" placeholder="Repeat password" {...regPass('confirm')} />
-                            {passErrors.confirm && <p className="mt-1 text-xs text-red-400">{passErrors.confirm.message}</p>}
+                            <Input type="password" placeholder="Repeat new password" {...regPass('confirm')} />
+                            {passErrors.confirm && <p className="mt-1 text-sm text-red-400">{passErrors.confirm.message}</p>}
                         </div>
-                        <Button type="submit" size="sm" variant="secondary" loading={savingPass}>Update password</Button>
+                        <Button type="submit" variant="secondary" loading={savingPass}>Update password</Button>
                     </form>
                 </CardContent>
             </Card>
 
-            {/* API Keys */}
+            {/* ── API Keys ── */}
             <Card>
                 <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                        <Key size={14} className="text-orange-400" />
+                    <CardTitle className="flex items-center gap-2 text-base">
+                        <Key size={16} className="text-orange-400" />
                         API Keys &amp; Data Sources
                     </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-3">
-                    <p className="text-xs text-text-muted">
-                        API keys are configured via environment variables on the server — never stored in the UI.
-                        The statuses below reflect which keys are currently set.
+                <CardContent className="space-y-4">
+                    <p className="text-sm text-text-muted">
+                        API keys are set via environment variables on the server — never stored in the UI.
                     </p>
-                    <div className="space-y-2">
+
+                    <div className="space-y-3">
                         {API_PROVIDERS.map((p) => (
                             <div
                                 key={p.id}
-                                className="flex items-start gap-3 p-3 rounded-lg border border-border-subtle bg-surface-1 hover:border-border-default transition-colors"
+                                className="flex items-start gap-4 p-4 rounded-xl border border-border-subtle bg-surface-1 hover:border-border-default transition-colors"
                             >
-                                <div className={cn('w-7 h-7 rounded-md flex items-center justify-center shrink-0', p.bg)}>
-                                    <Globe size={13} className={p.color} />
+                                <div className={cn('w-9 h-9 rounded-lg flex items-center justify-center shrink-0', p.bg)}>
+                                    <Globe size={16} className={p.color} />
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-2 flex-wrap">
-                                        <span className="text-xs font-medium text-text-primary">{p.label}</span>
+                                        <span className="text-sm font-semibold text-text-primary">{p.label}</span>
                                         {p.envKey ? (
-                                            <Badge variant="default" className="text-[9px]">{p.envKey}</Badge>
+                                            <Badge variant="default" className="font-mono text-xs">{p.envKey}</Badge>
                                         ) : (
-                                            <Badge variant="lime" className="text-[9px]">No key needed</Badge>
+                                            <Badge variant="lime">No key needed</Badge>
                                         )}
                                     </div>
-                                    <p className="text-[10px] text-text-muted mt-0.5">{p.note}</p>
+                                    <p className="text-sm text-text-muted mt-1">{p.note}</p>
                                     <a
                                         href={p.docs}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="text-[10px] text-orange-400 hover:underline mt-0.5 inline-flex items-center gap-1"
+                                        className="text-sm text-orange-400 hover:underline mt-1 inline-flex items-center gap-1"
                                     >
-                                        View docs →
+                                        View docs <ExternalLink size={11} />
                                     </a>
                                 </div>
-                                <div className="shrink-0">
+                                <div className="shrink-0 pt-0.5">
                                     {p.envKey === null ? (
-                                        <CheckCircle2 size={14} className="text-lime-300" />
+                                        <CheckCircle2 size={18} className="text-lime-300" />
                                     ) : (
-                                        <div className="flex items-center gap-1 text-[10px] text-text-muted">
-                                            <span>Set in <code className="text-orange-400">.env</code></span>
-                                        </div>
+                                        <span className="text-xs text-text-muted">
+                                            Set in <code className="text-orange-400 bg-surface-3 px-1.5 py-0.5 rounded">.env</code>
+                                        </span>
                                     )}
                                 </div>
                             </div>
                         ))}
                     </div>
 
-                    <div className="rounded-lg border border-border-subtle bg-surface-3 p-3 mt-2">
-                        <p className="text-xs font-medium text-text-secondary mb-1.5 flex items-center gap-1.5">
-                            <Zap size={11} className="text-orange-400" />
-                            How to add API keys
+                    {/* Code snippet */}
+                    <div className="rounded-xl border border-border-subtle bg-surface-3 p-4">
+                        <p className="text-sm font-semibold text-text-secondary mb-3 flex items-center gap-2">
+                            <Zap size={14} className="text-orange-400" />
+                            How to configure
                         </p>
-                        <div className="text-[11px] text-text-muted space-y-1 font-mono bg-surface-0 rounded p-2">
-                            <p className="text-text-secondary"># backend/.env</p>
+                        <div className="font-mono text-sm bg-surface-0 rounded-lg p-3 space-y-1">
+                            <p className="text-text-muted"># backend/.env</p>
                             <p>GOOGLE_PLACES_API_KEY=<span className="text-orange-400">your_key_here</span></p>
                             <p>YELP_API_KEY=<span className="text-orange-400">your_key_here</span></p>
                         </div>
-                        <p className="text-[10px] text-text-disabled mt-1.5">Restart the server after updating .env</p>
+                        <p className="text-xs text-text-disabled mt-2">Restart the server after updating .env</p>
                     </div>
                 </CardContent>
             </Card>
 
-            {/* Saved Searches */}
+            {/* ── Saved Searches ── */}
             <Card>
                 <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                        <Search size={14} className="text-orange-400" />
+                    <CardTitle className="flex items-center gap-2 text-base">
+                        <Search size={16} className="text-orange-400" />
                         Saved Searches
                         {savedData?.searches?.length > 0 && (
-                            <Badge variant="default" className="text-[10px] ml-1">{savedData.searches.length}</Badge>
+                            <Badge variant="default" className="ml-1">{savedData.searches.length}</Badge>
                         )}
                     </CardTitle>
                 </CardHeader>
                 <CardContent>
                     {savedLoading ? (
-                        <div className="space-y-2">{[1, 2, 3].map((i) => <Skeleton key={i} className="h-16 w-full" />)}</div>
-                    ) : savedData?.searches?.length === 0 ? (
-                        <p className="text-xs text-text-muted text-center py-6">
-                            No saved searches. Save one from the Discovery page.
+                        <div className="space-y-3">
+                            {[1, 2, 3].map((i) => <Skeleton key={i} className="h-16 w-full" />)}
+                        </div>
+                    ) : !savedData?.searches?.length ? (
+                        <p className="text-sm text-text-muted text-center py-8">
+                            No saved searches yet. Save one from the Discovery page.
                         </p>
                     ) : (
                         <div className="space-y-2">
                             {savedData.searches.map((s) => (
                                 <div
                                     key={s._id}
-                                    className="flex items-center gap-3 p-3 rounded-lg border border-border-subtle hover:border-border-default transition-colors"
+                                    className="flex items-center gap-4 p-4 rounded-xl border border-border-subtle hover:border-border-default transition-colors"
                                 >
                                     <div className="flex-1 min-w-0">
-                                        <p className="text-xs font-medium text-text-primary">{s.name}</p>
-                                        <div className="flex items-center gap-2 mt-0.5 text-[10px] text-text-muted flex-wrap">
+                                        <p className="text-sm font-semibold text-text-primary">{s.name}</p>
+                                        <div className="flex items-center gap-2 mt-1 text-sm text-text-muted flex-wrap">
                                             <span>{s.category}</span>
-                                            <span>·</span>
+                                            <span className="text-text-disabled">·</span>
                                             <span>{s.city}</span>
-                                            <span>·</span>
-                                            <span>{(s.radiusMeters / 1000).toFixed(0)}km radius</span>
+                                            <span className="text-text-disabled">·</span>
+                                            <span>{(s.radiusMeters / 1000).toFixed(0)}km</span>
                                             {s.lastRunAt && (
                                                 <>
-                                                    <span>·</span>
-                                                    <span>Last run {formatDate(s.lastRunAt)}</span>
+                                                    <span className="text-text-disabled">·</span>
+                                                    <span className="text-text-muted">Last run {formatDate(s.lastRunAt)}</span>
                                                 </>
                                             )}
                                         </div>
                                     </div>
-                                    <div className="flex items-center gap-1.5 shrink-0">
+                                    <div className="flex items-center gap-2 shrink-0">
                                         {s.schedule && (
                                             <button
                                                 onClick={() => togglePauseMutation.mutate({ id: s._id, isPaused: !s.isPaused })}
                                                 className={cn(
-                                                    'p-1.5 rounded transition-colors',
+                                                    'p-2 rounded-lg transition-colors',
                                                     s.isPaused
                                                         ? 'text-text-muted hover:text-lime-300 hover:bg-lime-300/10'
                                                         : 'text-orange-400 hover:text-orange-300 hover:bg-orange-500/10'
                                                 )}
                                                 title={s.isPaused ? 'Resume schedule' : 'Pause schedule'}
                                             >
-                                                {s.isPaused ? <Play size={12} /> : <PauseCircle size={12} />}
+                                                {s.isPaused ? <Play size={15} /> : <PauseCircle size={15} />}
                                             </button>
                                         )}
                                         <button
                                             onClick={() => { if (confirm('Delete this saved search?')) deleteSavedMutation.mutate(s._id) }}
-                                            className="p-1.5 rounded text-text-muted hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                                            className="p-2 rounded-lg text-text-muted hover:text-red-400 hover:bg-red-500/10 transition-colors"
                                         >
-                                            <Trash2 size={12} />
+                                            <Trash2 size={15} />
                                         </button>
                                     </div>
                                 </div>
@@ -313,16 +321,18 @@ export default function SettingsPage() {
                 </CardContent>
             </Card>
 
-            {/* Data & Privacy */}
+            {/* ── App Info ── */}
             <Card>
                 <CardHeader>
-                    <CardTitle className="text-xs text-text-secondary">App Info</CardTitle>
+                    <CardTitle className="text-sm text-text-secondary">App Info</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-1.5 text-[11px] text-text-muted">
-                    <p>LeadScout v1.0.0</p>
+                <CardContent className="space-y-2 text-sm text-text-muted">
+                    <p>LeadScout <span className="text-text-secondary font-medium">v1.0.0</span></p>
                     <p>Backend: Node.js + Express + MongoDB</p>
-                    <p>Frontend: React + Vite + TailwindCSS</p>
-                    <p className="text-text-disabled pt-1">Data is stored in your own MongoDB instance. No data is shared externally.</p>
+                    <p>Frontend: React + Vite + TailwindCSS v4</p>
+                    <p className="text-xs text-text-disabled pt-1">
+                        Data is stored in your own MongoDB instance. Nothing is shared externally.
+                    </p>
                 </CardContent>
             </Card>
         </div>

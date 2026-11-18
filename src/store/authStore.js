@@ -1,21 +1,16 @@
 import { create } from 'zustand'
 
+/**
+ * The application user is the local Mongo User document returned by /api/auth/me.
+ * Authentication itself is handled by Clerk; this store only caches the synced
+ * profile that the rest of the UI (and lead ownership) depends on.
+ */
 const useAuthStore = create((set) => ({
     user: null,
-    accessToken: localStorage.getItem('accessToken') || null,
-    isAuthenticated: !!localStorage.getItem('accessToken'),
 
-    setAuth: (user, accessToken) => {
-        localStorage.setItem('accessToken', accessToken)
-        set({ user, accessToken, isAuthenticated: true })
-    },
-
+    setUser: (user) => set({ user }),
     updateUser: (user) => set({ user }),
-
-    logout: () => {
-        localStorage.removeItem('accessToken')
-        set({ user: null, accessToken: null, isAuthenticated: false })
-    },
+    clearUser: () => set({ user: null }),
 }))
 
 export default useAuthStore

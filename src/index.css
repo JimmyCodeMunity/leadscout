@@ -55,6 +55,54 @@
   --font-size-3xl: 2rem;
 }
 
+/* ─────────────────────────────────────────────────────────────
+   Light theme
+   Tailwind v4 utilities reference the --color-* custom properties,
+   so overriding them here themes every existing utility at once.
+   ───────────────────────────────────────────────────────────── */
+:root {
+  --toast-success: #c6ff3d;
+  --toast-error: #f87171;
+}
+
+[data-theme="light"] {
+  --color-surface-0: #f6f6f7;
+  --color-surface-1: #ffffff;
+  --color-surface-2: #ffffff;
+  --color-surface-3: #f4f4f5;
+  --color-surface-4: #e4e4e7;
+  --color-surface-5: #d4d4d8;
+
+  --color-border-subtle: #e4e4e7;
+  --color-border-default: #d4d4d8;
+  --color-border-strong: #a1a1aa;
+
+  --color-text-primary: #18181b;
+  --color-text-secondary: #52525b;
+  --color-text-muted: #71717a;
+  --color-text-disabled: #a1a1aa;
+
+  /* Darken accent shades that are used as foreground colors on light surfaces. */
+  --color-orange-300: #9a3412;
+  --color-orange-400: #c2540a;
+  --color-red-400: #dc2626;
+  --color-lime-300: #4d7c0f;
+  --color-green-400: #15803d;
+  --color-blue-400: #1d4ed8;
+  --color-purple-400: #7e22ce;
+  --color-yellow-400: #a16207;
+  --color-gray-400: #6b7280;
+
+  --toast-success: #4d7c0f;
+  --toast-error: #dc2626;
+
+  color-scheme: light;
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+}
+
 @layer base {
 
   *,
@@ -78,6 +126,7 @@
     line-height: 1.6;
     margin: 0;
     padding: 0;
+    transition: background-color 0.2s ease, color 0.2s ease;
   }
 
   h1,
@@ -300,4 +349,139 @@
   background: #2a1212;
   color: #f87171;
   border-color: #7f1d1d33;
+}
+
+/* Light theme status badges */
+[data-theme="light"] .status-new {
+  background: #eff6ff;
+  color: #2563eb;
+  border-color: #bfdbfe;
+}
+
+[data-theme="light"] .status-contacted {
+  background: #f5f3ff;
+  color: #7c3aed;
+  border-color: #ddd6fe;
+}
+
+[data-theme="light"] .status-replied {
+  background: #ecfdf5;
+  color: #059669;
+  border-color: #a7f3d0;
+}
+
+[data-theme="light"] .status-negotiating {
+  background: #fffbeb;
+  color: #b45309;
+  border-color: #fde68a;
+}
+
+[data-theme="light"] .status-won {
+  background: #f7fee7;
+  color: #4d7c0f;
+  border-color: #d9f99d;
+}
+
+[data-theme="light"] .status-lost {
+  background: #fef2f2;
+  color: #dc2626;
+  border-color: #fecaca;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Public landing page
+   ───────────────────────────────────────────────────────────── */
+html {
+  scroll-behavior: smooth;
+}
+
+.landing-grid {
+  background-image:
+    linear-gradient(to right, color-mix(in srgb, var(--color-text-primary) 7%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in srgb, var(--color-text-primary) 7%, transparent) 1px, transparent 1px);
+  background-size: 64px 64px;
+  mask-image: radial-gradient(ellipse 70% 60% at 50% 0%, #000 35%, transparent 80%);
+  -webkit-mask-image: radial-gradient(ellipse 70% 60% at 50% 0%, #000 35%, transparent 80%);
+}
+
+.landing-reveal {
+  opacity: 0;
+  transform: translateY(26px);
+  transition:
+    opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: opacity, transform;
+}
+
+.landing-reveal.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@keyframes landingFloat {
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes landingFloatSlow {
+
+  0%,
+  100% {
+    transform: translateY(0) rotate(-1deg);
+  }
+
+  50% {
+    transform: translateY(-14px) rotate(1deg);
+  }
+}
+
+@keyframes landingPulse {
+
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1.08);
+  }
+}
+
+.animate-float {
+  animation: landingFloat 5s ease-in-out infinite;
+}
+
+.animate-float-slow {
+  animation: landingFloatSlow 7s ease-in-out infinite;
+}
+
+.animate-landing-pulse {
+  animation: landingPulse 3s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .landing-reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
+  .animate-float,
+  .animate-float-slow,
+  .animate-landing-pulse {
+    animation: none;
+  }
 }

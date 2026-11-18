@@ -94,23 +94,23 @@ export default function DashboardPage() {
                         ) : (
                             <ResponsiveContainer width="100%" height={192}>
                                 <BarChart data={byStatus} barSize={24}>
-                                    <CartesianGrid strokeDasharray="3 3" stroke="#27272b" vertical={false} />
+                                    <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border-subtle)" vertical={false} />
                                     <XAxis
                                         dataKey="name"
-                                        tick={{ fill: '#71717a', fontSize: 12 }}
+                                        tick={{ fill: 'var(--color-text-muted)', fontSize: 12 }}
                                         axisLine={false}
                                         tickLine={false}
                                     />
                                     <YAxis
-                                        tick={{ fill: '#71717a', fontSize: 12 }}
+                                        tick={{ fill: 'var(--color-text-muted)', fontSize: 12 }}
                                         axisLine={false}
                                         tickLine={false}
                                         width={32}
                                         allowDecimals={false}
                                     />
                                     <RechartsTip
-                                        contentStyle={{ background: '#1e1e22', border: '1px solid #313135', borderRadius: 8, fontSize: 13 }}
-                                        cursor={{ fill: '#27272b' }}
+                                        contentStyle={{ background: 'var(--color-surface-2)', border: '1px solid var(--color-border-default)', color: 'var(--color-text-primary)', borderRadius: 8, fontSize: 13 }}
+                                        cursor={{ fill: 'var(--color-surface-3)' }}
                                     />
                                     <Bar dataKey="value" name="Leads" radius={[4, 4, 0, 0]}>
                                         {byStatus.map((entry) => (
@@ -151,7 +151,7 @@ export default function DashboardPage() {
                                             ))}
                                         </Pie>
                                         <RechartsTip
-                                            contentStyle={{ background: '#1e1e22', border: '1px solid #313135', borderRadius: 8, fontSize: 13 }}
+                                            contentStyle={{ background: 'var(--color-surface-2)', border: '1px solid var(--color-border-default)', color: 'var(--color-text-primary)', borderRadius: 8, fontSize: 13 }}
                                         />
                                     </PieChart>
                                 </ResponsiveContainer>

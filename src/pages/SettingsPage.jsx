@@ -1,10 +1,11 @@
-import React, { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
+import { useClerk, useUser } from '@clerk/react'
 import { authApi, savedSearchesApi } from '@/lib/api'
 import useAuthStore from '@/store/authStore'
+import useThemeStore from '@/store/themeStore'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -15,7 +16,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import {
     CheckCircle2, Key, User, Search,
     Trash2, Play, PauseCircle, Globe, Zap,
-    ExternalLink,
+    ExternalLink, ShieldCheck, Palette, Sun, Moon, Monitor,
 } from 'lucide-react'
 import { formatDate, getInitials } from '@/lib/utils'
 import { cn } from '@/lib/utils'
@@ -25,13 +26,11 @@ const profileSchema = z.object({
     name: z.string().min(2, 'Name must be at least 2 characters'),
 })
 
-const passwordSchema = z.object({
-    password: z.string().min(8, 'Password must be at least 8 characters'),
-    confirm: z.string(),
-}).refine((d) => d.password === d.confirm, {
-    message: "Passwords don't match",
-    path: ['confirm'],
-})
+const THEME_OPTIONS = [
+    { id: 'light', label: 'Light', icon: Sun },
+    { id: 'dark', label: 'Dark', icon: Moon },
+    { id: 'system', label: 'System', icon: Monitor },
+]
 
 const API_PROVIDERS = [
     {
@@ -64,7 +63,12 @@ const API_PROVIDERS = [
 ]
 
 export default function SettingsPage() {
-    const { user, updateUser } = useAuthStore()
+    const user = useAuthStore((s) => s.user)
+    const setUser = useAuthStore((s) => s.setUser)
+    const theme = useThemeStore((s) => s.theme)
+    const setTheme = useThemeStore((s) => s.setTheme)
+    const { openUserProfile } = useClerk()
+    const { user: clerkUser } = useUser()
     const qc = useQueryClient()
 
     const {
@@ -75,13 +79,6 @@ export default function SettingsPage() {
         resolver: zodResolver(profileSchema),
         defaultValues: { name: user?.name || '' },
     })
-
-    const {
-        register: regPass,
-        handleSubmit: submitPass,
-        reset: resetPass,
-        formState: { errors: passErrors, isSubmitting: savingPass },
-    } = useForm({ resolver: zodResolver(passwordSchema) })
 
     const { data: savedData, isLoading: savedLoading } = useQuery({
         queryKey: ['saved-searches'],
@@ -101,20 +98,24 @@ export default function SettingsPage() {
     const handleProfileSave = async (data) => {
         try {
             const res = await authApi.updateMe(data)
-            updateUser(res.data.user)
+            setUser(res.data.user)
+
+            // Keep Clerk's profile name in sync so the account modal matches the app.
+            if (clerkUser) {
+                const parts = data.name.trim().split(/\s+/)
+                try {
+                    await clerkUser.update({
+                        firstName: parts[0],
+                        lastName: parts.slice(1).join(' '),
+                    })
+                } catch {
+                    // Local save succeeded; a Clerk sync failure shouldn't block the user.
+                }
+            }
+
             toast.success('Profile updated')
         } catch {
             toast.error('Update failed')
-        }
-    }
-
-    const handlePasswordSave = async (data) => {
-        try {
-            await authApi.updateMe({ password: data.password })
-            resetPass()
-            toast.success('Password changed')
-        } catch {
-            toast.error('Password change failed')
         }
     }
 
@@ -136,9 +137,17 @@ export default function SettingsPage() {
                 <CardContent className="space-y-6">
                     {/* User info */}
                     <div className="flex items-center gap-4">
-                        <div className="w-14 h-14 rounded-full bg-orange-500/20 border-2 border-orange-500/30 flex items-center justify-center shrink-0">
-                            <span className="text-lg font-bold text-orange-400">{getInitials(user?.name || 'U')}</span>
-                        </div>
+                        {user?.avatar ? (
+                            <img
+                                src={user.avatar}
+                                alt={user?.name || 'Profile'}
+                                className="w-14 h-14 rounded-full object-cover border-2 border-orange-500/30 shrink-0"
+                            />
+                        ) : (
+                            <div className="w-14 h-14 rounded-full bg-orange-500/20 border-2 border-orange-500/30 flex items-center justify-center shrink-0">
+                                <span className="text-lg font-bold text-orange-400">{getInitials(user?.name || 'U')}</span>
+                            </div>
+                        )}
                         <div>
                             <p className="text-base font-semibold text-text-primary">{user?.name}</p>
                             <p className="text-sm text-text-muted">{user?.email}</p>
@@ -150,9 +159,9 @@ export default function SettingsPage() {
 
                     {/* Profile form */}
                     <form onSubmit={submitProfile(handleProfileSave)} className="space-y-4 max-w-md">
-                        <p className="text-sm font-semibold text-text-secondary">Update Profile</p>
+                        <p className="text-sm font-semibold text-text-secondary">Display Name</p>
                         <div>
-                            <Label>Display Name</Label>
+                            <Label>Name</Label>
                             <Input {...regProfile('name')} />
                             {profileErrors.name && <p className="mt-1 text-sm text-red-400">{profileErrors.name.message}</p>}
                         </div>
@@ -161,21 +170,59 @@ export default function SettingsPage() {
 
                     <Separator />
 
-                    {/* Password form */}
-                    <form onSubmit={submitPass(handlePasswordSave)} className="space-y-4 max-w-md">
-                        <p className="text-sm font-semibold text-text-secondary">Change Password</p>
-                        <div>
-                            <Label>New Password</Label>
-                            <Input type="password" placeholder="Min. 8 characters" {...regPass('password')} />
-                            {passErrors.password && <p className="mt-1 text-sm text-red-400">{passErrors.password.message}</p>}
+                    {/* Clerk-managed account settings */}
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div className="flex items-start gap-3">
+                            <div className="w-9 h-9 rounded-lg bg-orange-500/10 flex items-center justify-center shrink-0">
+                                <ShieldCheck size={16} className="text-orange-400" />
+                            </div>
+                            <div>
+                                <p className="text-sm font-semibold text-text-primary">Password &amp; account security</p>
+                                <p className="text-sm text-text-muted mt-0.5">
+                                    Email, password, and connected accounts are managed securely by Clerk.
+                                </p>
+                            </div>
                         </div>
-                        <div>
-                            <Label>Confirm Password</Label>
-                            <Input type="password" placeholder="Repeat new password" {...regPass('confirm')} />
-                            {passErrors.confirm && <p className="mt-1 text-sm text-red-400">{passErrors.confirm.message}</p>}
-                        </div>
-                        <Button type="submit" variant="secondary" loading={savingPass}>Update password</Button>
-                    </form>
+                        <Button type="button" variant="secondary" onClick={() => openUserProfile()}>
+                            Manage account
+                        </Button>
+                    </div>
+                </CardContent>
+            </Card>
+
+            {/* ── Appearance ── */}
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-base">
+                        <Palette size={16} className="text-orange-400" />
+                        Appearance
+                    </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <p className="text-sm text-text-muted">
+                        Choose how Prospectly looks. “System” follows your device setting automatically.
+                    </p>
+                    <div className="grid grid-cols-3 gap-2 max-w-md">
+                        {THEME_OPTIONS.map(({ id, label, icon: Icon }) => {
+                            const active = theme === id
+                            return (
+                                <button
+                                    key={id}
+                                    type="button"
+                                    onClick={() => setTheme(id)}
+                                    className={cn(
+                                        'flex flex-col items-center justify-center gap-2 rounded-xl border px-3 py-4 text-sm font-medium transition-colors',
+                                        active
+                                            ? 'border-orange-500/50 bg-orange-500/10 text-orange-400'
+                                            : 'border-border-subtle bg-surface-1 text-text-muted hover:border-border-default hover:text-text-primary'
+                                    )}
+                                >
+                                    <Icon size={18} />
+                                    {label}
+                                </button>
+                            )
+                        })}
+                    </div>
                 </CardContent>
             </Card>
 
@@ -327,7 +374,7 @@ export default function SettingsPage() {
                     <CardTitle className="text-sm text-text-secondary">App Info</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-2 text-sm text-text-muted">
-                    <p>LeadScout <span className="text-text-secondary font-medium">v1.0.0</span></p>
+                    <p>Prospectly <span className="text-text-secondary font-medium">v1.0.0</span></p>
                     <p>Backend: Node.js + Express + MongoDB</p>
                     <p>Frontend: React + Vite + TailwindCSS v4</p>
                     <p className="text-xs text-text-disabled pt-1">

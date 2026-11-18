@@ -1,13 +1,14 @@
-import React, { useState, useEffect } from 'react'
-import { NavLink, useNavigate, useLocation } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { NavLink, useNavigate } from 'react-router-dom'
 import {
     LayoutDashboard, Users, Search, GitBranch, Settings,
     Radar, ChevronLeft, ChevronRight, LogOut, Menu, X,
 } from 'lucide-react'
+import { useClerk } from '@clerk/react'
 import { cn, getInitials } from '@/lib/utils'
 import useAuthStore from '@/store/authStore'
-import { authApi } from '@/lib/api'
 import { Tooltip, TooltipProvider } from '@/components/ui/tooltip'
+import ThemeToggle from './ThemeToggle'
 import toast from 'react-hot-toast'
 
 const navItems = [
@@ -62,14 +63,20 @@ function NavItem({ to, icon: Icon, label, collapsed, onClick }) {
    Sidebar inner content (shared desktop + mobile)
 ───────────────────────────────────────────── */
 function SidebarContent({ collapsed, onToggle, onNavClick }) {
-    const { user, logout } = useAuthStore()
+    const user = useAuthStore((s) => s.user)
+    const clearUser = useAuthStore((s) => s.clearUser)
+    const { signOut } = useClerk()
     const navigate = useNavigate()
 
     const handleLogout = async () => {
-        try { await authApi.logout() } catch (_) { }
-        logout()
-        navigate('/login')
-        toast.success('Logged out')
+        clearUser()
+        try {
+            await signOut({ redirectUrl: '/login' })
+            navigate('/login', { replace: true })
+            toast.success('Logged out')
+        } catch {
+            toast.error('Could not sign out')
+        }
     }
 
     return (
@@ -84,7 +91,7 @@ function SidebarContent({ collapsed, onToggle, onNavClick }) {
                 </div>
                 {!collapsed && (
                     <span className="text-lg font-bold text-text-primary tracking-tight animate-fade-in">
-                        LeadScout
+                        Prospectly
                     </span>
                 )}
             </div>
@@ -115,6 +122,9 @@ function SidebarContent({ collapsed, onToggle, onNavClick }) {
                         </div>
                     </div>
                 )}
+
+                {/* Theme */}
+                <ThemeToggle collapsed={collapsed} />
 
                 {/* Logout */}
                 {collapsed ? (
@@ -158,12 +168,6 @@ function SidebarContent({ collapsed, onToggle, onNavClick }) {
 ───────────────────────────────────────────── */
 export default function Sidebar({ collapsed, onToggle }) {
     const [mobileOpen, setMobileOpen] = useState(false)
-    const location = useLocation()
-
-    // Close mobile drawer when route changes
-    useEffect(() => {
-        setMobileOpen(false)
-    }, [location.pathname])
 
     // Lock body scroll when drawer is open
     useEffect(() => {
@@ -205,7 +209,12 @@ export default function Sidebar({ collapsed, onToggle }) {
                     <div className="w-8 h-8 rounded-lg bg-orange-500 flex items-center justify-center shadow-md shadow-orange-500/30">
                         <Radar size={16} className="text-white" />
                     </div>
-                    <span className="text-base font-bold text-text-primary tracking-tight">LeadScout</span>
+                    <span className="text-base font-bold text-text-primary tracking-tight">Prospectly</span>
+                </div>
+
+                {/* Theme switch (icon only) */}
+                <div className="ml-auto">
+                    <ThemeToggle collapsed className="w-10" />
                 </div>
             </div>
 

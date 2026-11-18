@@ -2,89 +2,65 @@ import axios from 'axios'
 
 // Dev:        VITE_API_URL is empty → Vite proxy rewrites /api → http://localhost:5000
 // Production: VITE_API_URL=https://leadserver.vercel.app → requests go to deployed backend
-const BASE_URL = import.meta.env.VITE_API_URL
-    ? `${import.meta.env.VITE_API_URL}/api`
-    : '/api'
+const _base = (import.meta.env.VITE_API_URL || '').replace(/\/+$/, '') // strip any trailing slashes
+const BASE_URL = _base ? `${_base}/api` : '/api'
 
 const api = axios.create({
     baseURL: BASE_URL,
     withCredentials: true,
 })
 
-// Attach access token to every request
-api.interceptors.request.use((config) => {
-    const token = localStorage.getItem('accessToken')
-    if (token) {
-        config.headers.Authorization = `Bearer ${token}`
+// Clerk's getToken() is registered by <AuthTokenBridge /> once ClerkProvider mounts.
+// Keeping it in a getter lets every request use a fresh, auto-refreshed session token.
+let tokenGetter = null
+
+export function setAuthTokenGetter(getter) {
+    tokenGetter = getter
+}
+
+api.interceptors.request.use(async (config) => {
+    if (config.headers?.Authorization || !tokenGetter) return config
+    try {
+        const token = await tokenGetter()
+        if (token) config.headers.Authorization = `Bearer ${token}`
+    } catch {
+        // Let the request go through unauthenticated; the API responds with 401.
     }
     return config
 })
 
-// Auto-refresh on 401 TOKEN_EXPIRED
-let isRefreshing = false
-let failedQueue = []
-
-const processQueue = (error, token = null) => {
-    failedQueue.forEach((p) => {
-        if (error) {
-            p.reject(error)
-        } else {
-            p.resolve(token)
-        }
-    })
-    failedQueue = []
-}
-
+// Clerk refreshes session tokens roughly every minute. If the backend still sees
+// an expired token, force a fresh one and retry the request exactly once.
 api.interceptors.response.use(
     (response) => response,
     async (error) => {
         const originalRequest = error.config
-        const code = error.response?.data?.error?.code
-
-        if (error.response?.status === 401 && code === 'TOKEN_EXPIRED' && !originalRequest._retry) {
-            if (isRefreshing) {
-                return new Promise((resolve, reject) => {
-                    failedQueue.push({ resolve, reject })
-                })
-                    .then((token) => {
-                        originalRequest.headers.Authorization = `Bearer ${token}`
-                        return api(originalRequest)
-                    })
-                    .catch((err) => Promise.reject(err))
-            }
-
-            originalRequest._retry = true
-            isRefreshing = true
-
+        if (
+            error.response?.status === 401 &&
+            originalRequest &&
+            !originalRequest._clerkRetry &&
+            tokenGetter
+        ) {
+            originalRequest._clerkRetry = true
             try {
-                const res = await api.post('/auth/refresh')
-                const newToken = res.data.accessToken
-                localStorage.setItem('accessToken', newToken)
-                api.defaults.headers.common.Authorization = `Bearer ${newToken}`
-                processQueue(null, newToken)
-                originalRequest.headers.Authorization = `Bearer ${newToken}`
-                return api(originalRequest)
-            } catch (refreshErr) {
-                processQueue(refreshErr, null)
-                localStorage.removeItem('accessToken')
-                window.location.href = '/login'
-                return Promise.reject(refreshErr)
-            } finally {
-                isRefreshing = false
+                const token = await tokenGetter({ skipCache: true })
+                if (token) {
+                    originalRequest.headers = originalRequest.headers || {}
+                    originalRequest.headers.Authorization = `Bearer ${token}`
+                    return api(originalRequest)
+                }
+            } catch {
+                // Fall through and reject with the original error.
             }
         }
-
         return Promise.reject(error)
     }
 )
 
 export default api
 
-// --- Auth ---
+// --- Auth (sessions are managed by Clerk; the API syncs the local user) ---
 export const authApi = {
-    signup: (data) => api.post('/auth/signup', data),
-    login: (data) => api.post('/auth/login', data),
-    logout: () => api.post('/auth/logout'),
     me: () => api.get('/auth/me'),
     updateMe: (data) => api.patch('/auth/me', data),
 }

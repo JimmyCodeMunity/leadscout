@@ -54,11 +54,19 @@ export default function AppLayout() {
     } = useQuery({
         queryKey: ['auth-me', userId],
         enabled: isLoaded && isSignedIn && Boolean(userId),
-        retry: 1,
+        // A 401 here means the token is not valid for this API; retrying the
+        // same request only produces duplicate 401s.
+        retry: false,
         staleTime: 5 * 60_000,
         queryFn: async () => {
+            // Mint the token right here instead of relying on the interceptor's
+            // effect-registered getter, which can be one render behind.
+            const token = await getTokenRef.current({ skipCache: true })
+            if (!token) {
+                throw new Error('Clerk returned no session token. Please sign out and sign in again.')
+            }
             setAuthTokenGetter((options) => getTokenRef.current(options))
-            const res = await authApi.me()
+            const res = await authApi.me(token)
             return res.data.user
         },
     })
@@ -83,7 +91,9 @@ export default function AppLayout() {
                     </div>
                     <h1 className="text-lg font-bold text-text-primary">We couldn't load your account</h1>
                     <p className="text-sm text-text-muted mt-2">
-                        {error.response?.data?.error?.message || 'Please check your connection and try again.'}
+                        {error.response?.data?.error?.message ||
+                            error.message ||
+                            'Please check your connection and try again.'}
                     </p>
                     <div className="flex items-center justify-center gap-2 mt-6">
                         <Button onClick={() => refetch()}>Try again</Button>
